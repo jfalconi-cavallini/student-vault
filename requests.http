@@ -26,3 +26,64 @@ GET {{base}}/tutors/PASTE-ID-HERE
 
 ### Archive (expect 204)
 DELETE {{base}}/tutors/PASTE-ID-HERE
+
+### ===== Students =====
+
+### Create a tutor to assign
+# @name tutor
+POST {{base}}/tutors
+Content-Type: application/json
+
+{ "name": "Ben Ortiz", "email": "ben@example.com", "subjects": ["Math"] }
+
+### Create a student assigned to that tutor (expect 201)
+# @name student
+POST {{base}}/students
+Content-Type: application/json
+
+{
+  "name": "Sam Lee",
+  "email": "sam@example.com",
+  "grade": "7",
+  "subjects": ["Math"],
+  "assignedTutorId": "{{tutor.response.body.id}}",
+  "parentName": "Pat Lee",
+  "parentEmail": "Pat@Example.com",
+  "timezone": "America/Chicago"
+}
+
+### Tutor's students (expect Sam in content)
+GET {{base}}/tutors/{{tutor.response.body.id}}/students
+
+### Get the student
+GET {{base}}/students/{{student.response.body.id}}
+
+### Update: change grade, drop parent info (PUT = full replace)
+PUT {{base}}/students/{{student.response.body.id}}
+Content-Type: application/json
+
+{
+  "name": "Sam Lee",
+  "email": "sam@example.com",
+  "grade": "8",
+  "subjects": ["Math", "Science"],
+  "assignedTutorId": "{{tutor.response.body.id}}"
+}
+
+### Nonexistent tutor in body (expect 400)
+POST {{base}}/students
+Content-Type: application/json
+
+{ "name": "Ghost", "email": "ghost@example.com", "assignedTutorId": "00000000-0000-0000-0000-000000000000" }
+
+### Bad timezone (expect 400)
+POST {{base}}/students
+Content-Type: application/json
+
+{ "name": "Tz Test", "email": "tz@example.com", "timezone": "America/Dalas" }
+
+### Unknown student (expect 404)
+GET {{base}}/students/00000000-0000-0000-0000-000000000000
+
+### Archive the student (expect 204)
+DELETE {{base}}/students/{{student.response.body.id}}
