@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface StudentRepository extends JpaRepository<Student, UUID> {
     Page<Student> findByAssignedTutorId(UUID tutorId, Pageable pageable);
     boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, UUID id);
 }

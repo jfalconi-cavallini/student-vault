@@ -12,14 +12,19 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.UUID;
 
+import com.studentvault.student.StudentResponse;
+import com.studentvault.student.StudentService;
+
 @RestController                  // a bean that handles HTTP and returns JSON
 @RequestMapping("/api/tutors")   // base path for every method below
 public class TutorController {
 
     private final TutorService tutorService;
+    private final StudentService studentService;
 
-    public TutorController(TutorService tutorService) {
+    public TutorController(TutorService tutorService, StudentService studentService) {
         this.tutorService = tutorService;
+        this.studentService = studentService;
     }
 
     @PostMapping
@@ -35,6 +40,13 @@ public class TutorController {
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable) {
         return new PagedModel<>(tutorService.list(pageable));
+    }
+
+    @GetMapping("/{id}/students")
+    public PagedModel<StudentResponse> students(
+            @PathVariable UUID id,
+            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        return new PagedModel<>(studentService.listByTutor(id, pageable));
     }
 
     @GetMapping("/{id}")
