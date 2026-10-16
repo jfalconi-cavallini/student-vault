@@ -87,3 +87,29 @@ GET {{base}}/students/00000000-0000-0000-0000-000000000000
 
 ### Archive the student (expect 204)
 DELETE {{base}}/students/{{student.response.body.id}}
+
+### ===== Error handling =====
+
+### Validation: field-level errors (expect 400 with "errors" map)
+POST {{base}}/tutors
+Content-Type: application/json
+
+{ "name": "", "email": "not-an-email" }
+
+### Malformed JSON (expect 400, not 500)
+POST {{base}}/tutors
+Content-Type: application/json
+
+{ "name": "Broken",
+
+### Bad UUID in path (expect 400)
+GET {{base}}/tutors/not-a-uuid
+
+### Unknown tutor (expect 404 Problem Details)
+GET {{base}}/tutors/00000000-0000-0000-0000-000000000000
+
+### Unknown route (expect 404, not 500)
+GET {{base}}/nope
+
+### Wrong method (expect 405)
+PATCH {{base}}/tutors

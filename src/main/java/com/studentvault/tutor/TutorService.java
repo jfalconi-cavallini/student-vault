@@ -1,13 +1,13 @@
 package com.studentvault.tutor;
 
+import com.studentvault.common.Emails;
+import com.studentvault.common.error.ConflictException;
+import com.studentvault.common.error.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Locale;
 import java.util.UUID;
 
 @Service   // marks this as a bean holding business logic
@@ -23,9 +23,9 @@ public class TutorService {
 
     @Transactional
     public TutorResponse create(TutorRequest request) {
-        String email = normalizeEmail(request.email());
+        String email = Emails.normalize(request.email());
         if (tutorRepository.existsByEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+            throw new ConflictException( "Email already in use");
         }
         Tutor tutor = new Tutor(request.name().trim(), email, request.subjects());
         return TutorResponse.from(tutorRepository.save(tutor));
@@ -44,9 +44,9 @@ public class TutorService {
     @Transactional
     public TutorResponse update(UUID id, TutorRequest request) {
         Tutor tutor = findOrThrow(id);
-        String email = normalizeEmail(request.email());
+        String email = Emails.normalize(request.email());
         if (tutorRepository.existsByEmailAndIdNot(email, id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+            throw new ConflictException( "Email already in use");
         }
         tutor.setName(request.name().trim());
         tutor.setEmail(email);
@@ -61,10 +61,7 @@ public class TutorService {
 
     private Tutor findOrThrow(UUID id) {
         return tutorRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tutor not found"));
+                .orElseThrow(() -> new NotFoundException( "Tutor not found"));
     }
 
-    private static String normalizeEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
-    }
 }
