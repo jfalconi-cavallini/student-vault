@@ -1,17 +1,18 @@
 package com.studentvault.student;
 
+import com.studentvault.common.Emails;
+import com.studentvault.common.error.BadRequestException;
+import com.studentvault.common.error.ConflictException;
+import com.studentvault.common.error.NotFoundException;
 import com.studentvault.tutor.Tutor;
 import com.studentvault.tutor.TutorRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -29,9 +30,9 @@ public class StudentService {
 
     @Transactional
     public StudentResponse create(StudentRequest request) {
-        String email = normalizeEmail(request.email());
+        String email = Emails.normalize(request.email());
         if (studentRepository.existsByEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+            throw new ConflictException( "Email already in use");
         }
         Student student = new Student(
                 request.name().trim(), email, request.grade(), resolveTutor(request.assignedTutorId()));
@@ -52,9 +53,9 @@ public class StudentService {
     @Transactional
     public StudentResponse update(UUID id, StudentRequest request) {
         Student student = findOrThrow(id);
-        String email = normalizeEmail(request.email());
+        String email = Emails.normalize(request.email());
         if (studentRepository.existsByEmailAndIdNot(email, id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+            throw new ConflictException( "Email already in use");
         }
         student.setName(request.name().trim());
         student.setEmail(email);
@@ -72,7 +73,7 @@ public class StudentService {
     @Transactional(readOnly = true)
     public Page<StudentResponse> listByTutor(UUID tutorId, Pageable pageable) {
         if (!tutorRepository.existsById(tutorId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tutor not found");
+            throw new NotFoundException( "Tutor not found");
         }
         return studentRepository.findByAssignedTutorId(tutorId, pageable).map(StudentResponse::from);
     }
@@ -82,7 +83,7 @@ public class StudentService {
     private void applyOptionalFields(Student student, StudentRequest request) {
         student.setSubjects(request.subjects());
         student.setParentName(request.parentName());
-        student.setParentEmail(request.parentEmail() == null ? null : normalizeEmail(request.parentEmail()));
+        student.setParentEmail(Emails.normalize(request.parentEmail()));
         student.setTimezone(resolveTimezone(request.timezone()));
     }
 
@@ -91,10 +92,9 @@ public class StudentService {
             return null;
         }
         Tutor tutor = tutorRepository.findById(tutorId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Assigned tutor does not exist"));
+                .orElseThrow(() -> new BadRequestException("Assigned tutor does not exist"));
         if (tutor.isArchived()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot assign an archived tutor");
+            throw new BadRequestException( "Cannot assign an archived tutor");
         }
         return tutor;
     }
@@ -106,16 +106,13 @@ public class StudentService {
         try {
             return ZoneId.of(timezone.trim()).getId();   // rejects typos like "America/Dalas"
         } catch (DateTimeException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid timezone: " + timezone);
+            throw new BadRequestException( "Invalid timezone: " + timezone);
         }
     }
 
     private Student findOrThrow(UUID id) {
         return studentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
+                .orElseThrow(() -> new NotFoundException( "Student not found"));
     }
 
-    private static String normalizeEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
-    }
 }
