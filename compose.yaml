@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: student-vault-db
+    environment:
+      POSTGRES_DB: studentvault
+      POSTGRES_USER: vault
+      POSTGRES_PASSWORD: vault
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
