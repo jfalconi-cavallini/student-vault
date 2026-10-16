@@ -113,3 +113,55 @@ GET {{base}}/nope
 
 ### Wrong method (expect 405)
 PATCH {{base}}/tutors
+
+
+### ===== Session notes =====
+
+### Setup: tutor
+# @name nTutor
+POST {{base}}/tutors
+Content-Type: application/json
+
+{ "name": "Cora Diaz", "email": "cora@example.com", "subjects": ["Math"] }
+
+### Setup: student A
+# @name nStudentA
+POST {{base}}/students
+Content-Type: application/json
+
+{ "name": "Avery Kim", "email": "avery@example.com", "grade": "6", "assignedTutorId": "{{nTutor.response.body.id}}" }
+
+### Setup: student B
+# @name nStudentB
+POST {{base}}/students
+Content-Type: application/json
+
+{ "name": "Blake Fox", "email": "blake@example.com", "grade": "6" }
+
+### Create a note for A (expect 201)
+# @name note
+POST {{base}}/students/{{nStudentA.response.body.id}}/notes
+Content-Type: application/json
+
+{ "tutorId": "{{nTutor.response.body.id}}", "topic": "Ratios", "notes": "Solid on unit rates; word problems need practice." }
+
+### List A's notes (expect the note, newest first)
+GET {{base}}/students/{{nStudentA.response.body.id}}/notes
+
+### Update the note (expect 200)
+PUT {{base}}/students/{{nStudentA.response.body.id}}/notes/{{note.response.body.id}}
+Content-Type: application/json
+
+{ "topic": "Ratios & rates", "notes": "Improved on word problems by end of session." }
+
+### IDOR check: A's note via B's URL (expect 404)
+GET {{base}}/students/{{nStudentB.response.body.id}}/notes/{{note.response.body.id}}
+
+### Missing tutorId (expect 400 with errors.tutorId)
+POST {{base}}/students/{{nStudentA.response.body.id}}/notes
+Content-Type: application/json
+
+{ "topic": "No author", "notes": "Should fail" }
+
+### Delete the note (expect 204), then GET it again for 404
+DELETE {{base}}/students/{{nStudentA.response.body.id}}/notes/{{note.response.body.id}}
