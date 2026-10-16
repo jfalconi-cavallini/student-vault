@@ -1,0 +1,28 @@
+@base = http://localhost:8080/api
+
+### Create a tutor (expect 201)
+POST {{base}}/tutors
+Content-Type: application/json
+
+{ "name": "Ana Rivera", "email": "Ana@Example.com", "subjects": ["Math", "SAT"] }
+
+### List tutors (expect 200, paginated)
+GET {{base}}/tutors?page=0&size=10
+
+### Validation error (expect 400)
+POST {{base}}/tutors
+Content-Type: application/json
+
+{ "name": "", "email": "not-an-email" }
+
+### Duplicate email (expect 409)
+POST {{base}}/tutors
+Content-Type: application/json
+
+{ "name": "Someone Else", "email": "ana@example.com", "subjects": [] }
+
+### Get one — paste a real id from the create response
+GET {{base}}/tutors/PASTE-ID-HERE
+
+### Archive (expect 204)
+DELETE {{base}}/tutors/PASTE-ID-HERE
