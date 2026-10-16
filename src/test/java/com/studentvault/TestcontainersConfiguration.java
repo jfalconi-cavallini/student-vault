@@ -1,4 +1,4 @@
-package com.studentvault.student_vault;
+package com.studentvault;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
